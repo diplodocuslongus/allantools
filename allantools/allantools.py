@@ -7,6 +7,9 @@ Allan deviation tools
 Version history
 ---------------
 
+**2024.06**
+- fix import scipy.integrate.simpson
+
 **2024.04**
 - ITU PRC, PRTC, ePRTC masks for TDEV and MTIE in new file mask.py
 - psd2allan() - convert PSD to ADEV/MDEV
@@ -111,7 +114,7 @@ import os
 import json
 import numpy as np
 from scipy import interpolate      # used in psd2allan()
-from scipy.integrate import simps  # used in psd2allan()
+from scipy.integrate import simpson  # used in psd2allan()
 
 from . import ci  # edf, confidence intervals
 
@@ -598,8 +601,8 @@ def gcodev(data_1, data_2, rate=1.0, data_type="phase", taus=None):
 
     References
     ----------
-    * [Vernotte2016]
-    * [Lantz2019]
+    * [Vernotte2016]_
+    * [Lantz2019]_
     """
     phase_1 = input_to_phase(data_1, rate, data_type)
     phase_2 = input_to_phase(data_2, rate, data_type)
@@ -1071,7 +1074,7 @@ def calc_mtotdev_phase(phase, rate, m):
         for j in range(0, 6*m):  # summation of the 6m terms.
             # faster inner sum, based on Stable32 MTC.c code
             if j == 0:
-                # intialize the sum
+                # initialize the sum
                 xmean1 = np.sum(xstar[0:m])
                 xmean2 = np.sum(xstar[m:2*m])
                 xmean3 = np.sum(xstar[2*m:3*m])
@@ -1228,7 +1231,7 @@ def calc_htotdev_freq(freq, m):
             # squaresum += pow(xmean1 - 2.0*xmean2 + xmean3, 2)
             # new faster way of doing the sums
             if j == 0:
-                # intialize the sum
+                # initialize the sum
                 xmean1 = np.sum(xstar[0:m])
                 xmean2 = np.sum(xstar[m:2*m])
                 xmean3 = np.sum(xstar[2*m:3*m])
@@ -1756,7 +1759,7 @@ def psd2allan(S_y, f=1.0, kind='adev', base=2):
         for idx, mj in enumerate(m)])
     integrand = np.insert(integrand, 0, 0.0, axis=1)
     f = np.insert(f, 0, 0.0)
-    ad = np.sqrt(2.0 * simps(integrand, f))
+    ad = np.sqrt(2.0 * simpson(integrand, x=f))
     return taus_used, ad
 
 
@@ -1946,7 +1949,7 @@ def tau_reduction(ms, rate, n_per_decade):
 
     """
     ms = np.int64(ms)
-    keep = np.bool8(np.rint(n_per_decade*np.log10(ms[1:])) -
+    keep = np.bool_(np.rint(n_per_decade*np.log10(ms[1:])) -
                     np.rint(n_per_decade*np.log10(ms[:-1])))
     # Adjust ms size to fit above-defined mask
     ms = ms[:-1]
